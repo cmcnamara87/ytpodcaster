@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx" 
+					   applicationComplete="windowedapplication1_applicationCompleteHandler(event)"
+					   visible="false">
+	<fx:Script>
+		<![CDATA[
+			import flash.events.Event;
+			import flash.html.HTMLLoader;
+			import flash.net.URLRequest;
+			
+			import mx.events.FlexEvent;
+			
+			private var javascriptWindow; // The html page with js functions
+			private var youtubeLoader:URLLoader; // loads the youtube page
+			private var serverSocket:ServerSocket; // listens for connections from itunes
+			private var clientSocket:Socket; // itunes connection
+			private var justLaunched:Boolean = true;
+			private var quality:String;
+			
+			function dockIconLoaded (event:Event):void
+			{
+				var bitmapData:BitmapData = Bitmap(LoaderInfo(event.target).content).bitmapData;
+				NativeApplication.nativeApplication.icon.bitmaps = [bitmapData];
+			}
+			
+			/**
+			 * The app has been opened
+			 */
+			protected function windowedapplication1_applicationCompleteHandler(event:FlexEvent):void
+			{
+				var loader:Loader = new Loader();
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, dockIconLoaded);
+				loader.load(new URLRequest("icon128fade.png"));
+				
+				// Download the javascript html
+				trace("app running");
+				var html:HTMLLoader = new HTMLLoader();
+				html.load(new URLRequest("http://ytpodcaster.com/api/index.php/javascript"));
+				html.addEventListener(Event.COMPLETE, onJavascriptLoaded);
+				
+				if(NativeApplication.supportsDockIcon){
+					var dockIcon:DockIcon = NativeApplication.nativeApplication.icon as DockIcon;
+					NativeApplication.nativeApplication.addEventListener(InvokeEvent.INVOKE, dockIconClicked);
+				} 
+//				else if (NativeApplication.supportsSystemTrayIcon){
+//					var sysTrayIcon:SystemTrayIcon =
+//						NativeApplication.nativeApplication.icon as SystemTrayIcon;
+//					sysTrayIcon.tooltip = "Stopwatch";
+//					sysTrayIcon.addEventListener(MouseEvent.CLICK,undock);
+//					sysTrayIcon.menu = createIconMenu();
+//				}
+			}
+
+			private function dockIconClicked(e:Event):void {
+				if(!this.justLaunched) {
+					var url:String = "http://www.ytpodcaster.com"; 
+					var urlReq:URLRequest = new URLRequest(url); 
+					navigateToURL(urlReq);	
+				}
+				this.justLaunched = false;
+			}
+			
+			private function onJavascriptLoaded(e:Event):void
+			{				
+				trace("javascript loaded");
+				this.javascriptWindow = e.target.window;
+
+				// Setup the socket server
+				this.serverSocket = new ServerSocket();
+				this.serverSocket.addEventListener(ServerSocketConnectEvent.CONNECT, onConnect);
+				tryAndBind();
+				
+				NativeApplication.nativeApplication.addEventListener( Event.EXITING, appClosed);
+			}
+			
+			/**
+			 * Handles app being closed
+			 * Closes the server socket.
+			 */
+			private function appClosed(e:Event):void {
+				if(this.serverSocket.bound) {
+					this.serverSocket.close();	
+				}
+			}
+			
+			private function tryAndBind():void {
+				try {
+					serverSocket.bind(8891);
+					serverSocket.listen();
+					NativeApplication.nativeApplication.icon.bitmaps = [];
+				} catch (e:Error) {
+					setTimeout(tryAndBind, 2000);
+				}
+			}
+			
+			// iTunes connected
+			private function onConnect(e:ServerSocketConnectEvent):void {
+				clientSocket = e.socket;
+				clientSocket.addEventListener(ProgressEvent.SOCKET_DATA, onData);
+				clientSocket.addEventListener(Event.CLOSE, onConnectionClosed);	
+			}
+			
+			private function onConnectionClosed(e:Event):void {
+			}
+			
+			private function onData(e:ProgressEvent):void {
+				// Get out the request
+				var bytes:ByteArray = new ByteArray();
+				(e.target as Socket).readBytes(bytes);
+				var requestString:String = bytes + "";
+				var requestURL:String = requestString.substring("GET /".length, requestString.indexOf("HTTP/") - 1);
+				
+//				http://localhost:8891/download/22/eUA8TLXjtL0.mp4
+				var urlSegments:Array = requestURL.split("/");
+				this.quality = urlSegments[1];
+				var videoId:String = urlSegments[2];
+				
+				// Load the youtube HTML
+				trace("requesting youtube " + videoId);
+				var url:URLRequest = new URLRequest("http://www.youtube.com/watch?v=" + videoId);
+				this.youtubeLoader = new URLLoader();
+				this.youtubeLoader.load(url);
+				this.youtubeLoader.addEventListener(Event.COMPLETE, onYoutubeLoaded);
+			}
+			
+			private function onYoutubeLoaded(e:Event):void 
+			{
+				// Execute the javascript code
+				trace(this.quality);
+				var mp4Url:String = this.javascriptWindow.getUrl(this.youtubeLoader.data, this.quality);
+				
+				trace("mp4", mp4Url);
+				this.clientSocket.writeUTFBytes("HTTP/1.1 302 Found\n");
+				this.clientSocket.writeUTFBytes("Location: " + mp4Url);
+				this.clientSocket.flush();
+				this.clientSocket.close();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:WindowedApplication>

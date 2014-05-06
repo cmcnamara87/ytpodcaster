@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+   <channel>
+      <title>All About Everything</title>
+      <link>http://www.example.com/podcasts/everything/index.html</link>
+      <language>en-us</language>
+      <copyright>℗ &amp; © 2005 John Smith &amp; Family</copyright>
+      <itunes:subtitle>A programme about everything</itunes:subtitle>
+      <itunes:author>John Smith</itunes:author>
+      <itunes:summary>All About Everything is a programme about everything. Each week we dive into any subject known to man and talk about it as much as we can. Look for our Podcast in the iTunes Store</itunes:summary>
+      <description>All About Everything is a programme about everything. Each week we dive into any subject known to man and talk about it as much as we can. Look for our Podcast in the iTunes Store</description>
+      <itunes:owner>
+         <itunes:name>John Smith</itunes:name>
+         <itunes:email>john.smith@example.com</itunes:email>
+      </itunes:owner>
+      <itunes:image href="http://example.com/podcasts/everything/AllAboutEverything.jpg" />
+   </channel>
+</rss>

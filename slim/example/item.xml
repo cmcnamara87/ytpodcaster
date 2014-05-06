@@ -1,0 +1,11 @@
+<item xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd">
+	<title>Shake Shake Shake Your Spices</title>
+	<itunes:author>John Smith</itunes:author>
+	<itunes:subtitle>A short introduction to table spices</itunes:subtitle>
+	<itunes:summary>This week we talk about salt and pepper shakers, comparing and contrasting pour rates, construction materials and overall aesthetics. Come and join the party!</itunes:summary>
+	<itunes:image href="http://example.com/podcasts/everything/AllAboutEverything/Episode1.jpg" />
+	<enclosure url="http://example.com/podcasts/everything/AllAboutEverythingEpisode3.m4a" length="8727310" type="audio/x-m4a" />
+	<guid>http://example.com/podcasts/archive/aae20050615.m4a</guid>
+	<pubDate>Wed, 15 Jun 2005 19:00:00 GMT</pubDate>
+	<itunes:duration>7:04</itunes:duration>
+</item>

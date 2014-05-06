@@ -1,0 +1,133 @@
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!-- <script src="script.js"></script> -->
+    <script>
+    'use strict';
+
+    /**
+     * Reverses a string
+     * @return {String} A reversed string
+     */
+    String.prototype.reverse = function() {
+        return this.split('').reverse().join('');
+    };
+
+    /**
+     * Slices a string from start index to end index with a step
+     * @param  {[type]} startIndex [description]
+     * @param  {[type]} endIndex   [description]
+     * @param  {[type]} step       [description]
+     * @return {[type]}            [description]
+     */
+    String.prototype.slice = function(startIndex, endIndex, step) {
+        var result = '';
+        if (!endIndex && !step) {
+            return this.charAt(startIndex);
+        }
+
+        if (!endIndex) {
+            endIndex = this.length;
+        }
+        if (!step) {
+            step = 1;
+        }
+        if (startIndex < endIndex && step < 0 || startIndex > endIndex && step > 0 || step === 0) {
+            throw ('indexes are wrong');
+        }
+
+        for (var i = startIndex; i !== endIndex; i += step) {
+            result += this.charAt(i);
+        }
+        return result;
+    };
+
+    /**
+     * Decrypt Youtube Signature
+     * @param {[type]} a [description]
+     */
+
+    function XD(a, b) {
+        var c = a[0];
+        a[0] = a[b % a.length];
+        a[b] = c;
+        return a;
+    }
+
+    function WD(a) {
+        a = a.split('');
+        a = a.reverse();
+        a = a.slice(1);
+        a = a.reverse();
+        a = a.slice(3);
+        a = XD(a, 19);
+        a = a.reverse();
+        a = XD(a, 35);
+        a = XD(a, 61);
+        a = a.slice(2);
+        return a.join('');
+    }
+
+    function queryStringToHash(query) {
+        var queryString = {};
+        var vars = query.split('&');
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split('=');
+            pair[0] = decodeURIComponent(pair[0]);
+            pair[1] = decodeURIComponent(pair[1]);
+            // If first entry with this name
+            if (typeof queryString[pair[0]] === 'undefined') {
+                queryString[pair[0]] = pair[1];
+                // If second entry with this name
+            } else if (typeof queryString[pair[0]] === 'string') {
+                var arr = [queryString[pair[0]], pair[1]];
+                queryString[pair[0]] = arr;
+                // If third or later entry with this name
+            } else {
+                queryString[pair[0]].push(pair[1]);
+            }
+        }
+        return queryString;
+    }
+
+    function findUrl(fmtStreams, quality) {
+        var bestQualityFound = 18;
+        var url;
+        for (var i = 0; i < fmtStreams.length; ++i) {
+            var fmtStream = queryStringToHash(fmtStreams[i]);
+
+            if (fmtStream.itag <= quality && fmtStream.itag >= bestQualityFound && fmtStream.type.indexOf('video/mp4') !== -1) {
+                bestQualityFound = fmtStream.itag;
+                if (fmtStream.url.indexOf('signature=') !== -1) {
+                    url = fmtStream.url;
+                } else {
+                    url = fmtStream.url + '&signature=' + WD(fmtStream.s);
+                }
+            }
+        }
+        return url;
+    }
+
+    function getUrl(html, quality) {
+        if (!quality) {
+            quality = 18;
+        }
+        // var myRegexp = new RegExp('ytplayer\.config = (.*?);<\/script>', 'gi');
+        var myRegexp = new RegExp('ytplayer\.config = (.*?);', 'gi');
+        var match = myRegexp.exec(html);
+
+        var jsonString = match[1];
+        // var config = 'cats';
+        // var cats = JSON.parse('{"test": "yes"}');
+        // console.log('jsonString', jsonString);
+        var config = JSON.parse(jsonString);
+        var fmtStreams = config.args['url_encoded_fmt_stream_map'].split(',');
+        return findUrl(fmtStreams, quality);
+    }
+    </script>
+</head>
+
+<!--    // source: http://userscripts.org/scripts/review/87011 // related: // var ytDecrypter = null; // var ytDecryptFunction = null; // function decryptSignature2(s) { // if (typeof ytDecrypter === 'function') { // return ytDecrypter(s); // } else { // if (!ytDecryptFunction) ytDecryptFunction = 'a=a.split("");a=Tk(a,4);a=a.slice(3);a=Tk(a,53);a=a.slice(2);return a.join("")'; // var ytFncSwap = ytDecryptFunction.match(/\w=(\w+)\(\w,[0-9]+\)/); // ytFncSwap = (ytFncSwap) ? ytFncSwap[1] : null; // if (ytFncSwap) { // var ytFncBody = 'function ' + ytFncSwap + '(a, b)' + '{var c=a[0];a[0]=a[b%a.length];a[b]=c;return a} ' + ytDecryptFunction; // ytDecrypter = new Function('a', ytFncBody); // return ytDecrypter(s); // } // } // return null; // } -->
+
+</html>
